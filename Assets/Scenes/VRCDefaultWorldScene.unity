@@ -774,7 +774,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   launchedFromSDKPipeline: 0
   completedSDKPipeline: 0
-  blueprintId: wrld_aefe175a-146d-4551-9c9d-1b3e7dca4f2b
+  blueprintId:
   contentType: 1
   assetBundleUnityVersion: 
   fallbackStatus: 0

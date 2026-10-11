@@ -1,0 +1,37 @@
+# Unity generated (rebuilt automatically when the project opens)
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# IDE and generated project files
+.vscode/
+.idea/
+.vs/
+*.csproj
+*.sln
+*.suo
+*.user
+*.pidb
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# VRChat SDK packages (restored by ALCOM / VCC from Packages/vpm-manifest.json)
+/Packages/com.vrchat.*/
+
+# Blender backup files
+*.blend1
+*.blend2
+
+# OS junk
+.DS_Store
+Thumbs.db
+sysinfo.txt
+crashlytics-build.properties

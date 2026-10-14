@@ -35,3 +35,6 @@
 Thumbs.db
 sysinfo.txt
 crashlytics-build.properties
+
+# Downloaded source data for Tools/elements/build_elements.py
+/Tools/elements/.cache/

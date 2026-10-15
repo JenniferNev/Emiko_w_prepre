@@ -26,7 +26,10 @@ Shader "ChemistryLab/Atom Symbol"
 
     SubShader
     {
-        Tags { "RenderType" = "Transparent" "Queue" = "Transparent" "IgnoreProjector" = "True" }
+        // DisableBatching: dynamic/static batching would pre-transform the TMP
+        // mesh into world space, destroying the object center and scale that
+        // the billboard and depth trick below rely on.
+        Tags { "RenderType" = "Transparent" "Queue" = "Transparent" "IgnoreProjector" = "True" "DisableBatching" = "True" }
 
         Blend SrcAlpha OneMinusSrcAlpha
         ZWrite Off

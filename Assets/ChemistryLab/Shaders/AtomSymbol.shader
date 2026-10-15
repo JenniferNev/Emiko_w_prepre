@@ -3,7 +3,8 @@
 // - Billboard: the text is rebuilt facing the camera in the vertex shader,
 //   so every player (and each VR eye) sees it upright and readable. It runs
 //   on each viewer's own GPU: purely local, no scripts, no networking.
-//   Both eyes use the camera's rotation, so there is no stereo mismatch.
+//   In VR both eyes face it toward the point between them, so there is no
+//   stereo mismatch.
 // - "Visible through its own sphere, hidden by everything else": the text
 //   is drawn after the opaque sphere with its depth moved to the sphere's
 //   front surface. It passes the depth test against its own sphere, but an
@@ -77,23 +78,37 @@ Shader "ChemistryLab/Atom Symbol"
                 float3 center = mul(unity_ObjectToWorld, float4(0, 0, 0, 1)).xyz;
                 float scale = length(unity_ObjectToWorld._m00_m10_m20);
 
-                // Camera-aligned billboard: rows 0/1 of the view matrix are the
-                // camera's right/up vectors in world space.
-                float3 camRight = UNITY_MATRIX_V[0].xyz;
-                float3 camUp = UNITY_MATRIX_V[1].xyz;
+                // Viewer position. In VR use the point between the eyes, so
+                // both eyes see the letter with the same orientation.
+                #if defined(USING_STEREO_MATRICES)
+                    float3 eye = (unity_StereoWorldSpaceCameraPos[0] + unity_StereoWorldSpaceCameraPos[1]) * 0.5;
+                #else
+                    float3 eye = _WorldSpaceCameraPos;
+                #endif
+
+                // Viewer-facing billboard: the text plane is kept square to the
+                // line from the eye to the atom. (Copying the camera rotation
+                // instead tilts the plane for atoms away from the screen center,
+                // and one side of the letter then sinks into the sphere.)
+                float3 toCam = eye - center;
+                float camDist = max(length(toCam), 1e-5);
+                float3 facing = toCam / camDist;
+                float3 camUp = UNITY_MATRIX_V[1].xyz;        // follows head roll
+                float3 right = cross(camUp, facing);
+                right = dot(right, right) > 1e-6 ? normalize(right) : UNITY_MATRIX_V[0].xyz;
+                float3 up = cross(facing, right);
+
                 float3 worldPos = center
-                    + camRight * (v.vertex.x * scale)
-                    + camUp * (v.vertex.y * scale);
+                    + right * (v.vertex.x * scale)
+                    + up * (v.vertex.y * scale);
                 o.pos = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
 
-                // Depth of the sphere's front surface (plus 1%), so the symbol
+                // Depth of the sphere's front surface (plus 2%), so the symbol
                 // wins against its own sphere but nothing else.
-                float3 toCam = _WorldSpaceCameraPos - center;
-                float camDist = length(toCam);
-                float push = _SphereRadius * scale * 1.01;
+                float push = _SphereRadius * scale * 1.02;
                 if (camDist > push)
                 {
-                    float4 front = mul(UNITY_MATRIX_VP, float4(worldPos + toCam / camDist * push, 1));
+                    float4 front = mul(UNITY_MATRIX_VP, float4(worldPos + facing * push, 1));
                     o.pos.z = front.z / front.w * o.pos.w;
                 }
 

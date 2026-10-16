@@ -93,10 +93,14 @@ Shader "ChemistryLab/Atom Symbol"
                 float3 toCam = eye - center;
                 float camDist = max(length(toCam), 1e-5);
                 float3 facing = toCam / camDist;
+                // Unity's world is left-handed but cross() is the plain math
+                // cross product, so the viewer's right is cross(facing, up):
+                // camera looking down +Z -> facing (0,0,-1), up (0,1,0) ->
+                // right (+1,0,0). The other order mirrors the text.
                 float3 camUp = UNITY_MATRIX_V[1].xyz;        // follows head roll
-                float3 right = cross(camUp, facing);
+                float3 right = cross(facing, camUp);
                 right = dot(right, right) > 1e-6 ? normalize(right) : UNITY_MATRIX_V[0].xyz;
-                float3 up = cross(facing, right);
+                float3 up = cross(right, facing);
 
                 float3 worldPos = center
                     + right * (v.vertex.x * scale)

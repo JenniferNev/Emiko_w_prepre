@@ -70,6 +70,7 @@ Transition metals and f-block elements use typical coordination numbers and are 
 ### `ChemistryLab/Atom Symbol` (the letter)
 Used on a TextMeshPro **3D** text object called `Symbol`, a child of the atom.
 - **Faces the viewer:** each player's own GPU turns the letter toward that player's eye. It's purely local, with no networking. In VR, both eyes use the point between them, so they see the same angle.
+  - **Handedness:** Unity's world is left-handed but HLSL `cross()` is the plain math cross product, so the letter's right vector is `cross(facing, up)`. The other order mirrors the text (it did, until `ed8811b`; H is symmetric, so it only showed on C).
 - **Visible through its own sphere:** the letter is drawn after the sphere, with its depth moved to the sphere's front surface (+2%). It shows through its own ball, but anything in front of the ball hides it.
 - **`DisableBatching` tag:** required. Unity's dynamic batching would merge the letter into a world-space mesh and break the billboard.
 
@@ -108,22 +109,29 @@ Used on a TextMeshPro **3D** text object called `Symbol`, a child of the atom.
 - A bonded atom can't be grabbed separately; move the molecule by its root atom.
 - Local only: remove **VRC Object Sync** from atoms for now, because synced objects can't change parent.
 
-### Setup in Unity
-1. **Program asset:** Create → VRChat → Udon → Udon C# Program Asset `ElementAtom`, with Source Script = `ElementAtom.cs`.
-2. **`Atom_H` prefab:** add the Element Atom component with H, 1, terminal.
-3. **`Atom_C`:** a prefab variant of `Atom_H` with:
+### Setup in Unity (done 2026-10-15: methane works)
+1. **Program asset:** `Assets/ChemistryLab/Scripts/ElementAtom.asset`. Made with Create → VRChat → Udon → **Udon C# Program Asset**, then Source Csharp Script = `ElementAtom.cs`.
+2. **`Atom_H` prefab** (`Assets/ChemistryLab/Atom_H.prefab`): the Element Atom component added directly (Add Component → Element Atom), with H, 1, terminal.
+3. **`Atom_C`** (`Assets/ChemistryLab/Atom_C.prefab`): a prefab variant of `Atom_H` with:
    - scale 0.152
-   - material `Atom_C` (#909090)
+   - material `Materials/Atom/Atom_C` (#909090)
    - Symbol text "C"
-   - Element Atom: C, 4, tetrahedral, 109.471
-4. **Test:** release H atoms within about 17 cm (center to center) of the C. They snap at 10.7 cm, the real C–H length, and four of them make CH₄.
+   - Element Atom: C, **4**, tetrahedral, 109.471
+4. **Test:** release H atoms within about 17 cm (center to center) of the C. They snap at 10.7 cm, the real C–H length, and four of them make CH₄. ✅
+
+### Pitfalls hit while setting up
+- **Udon Behaviour → New Program makes an Udon Graph asset, not UdonSharp.** It lands in `Scenes/VRCDefaultWorldScene_UdonProgramSources/` with empty `graphData`. For UdonSharp, create the program asset from the Create menu and add the script itself as a component.
+- **"Source C# script … is null" right after creating the program asset:** UdonSharp compiles as soon as the asset is created and again when it's renamed, before the script is assigned. Assign Source Csharp Script, press Compile All UdonSharp Programs, then Clear the Console.
+- **Edits on a scene instance are overrides, not prefab changes.** The Carbon values were first set on the scene copy (bold fields, blue bar), so the `Atom_C` asset stayed a plain H. Fix: Overrides → **Apply All**, or edit the prefab in Prefab Mode (double-click it in the Project window).
+- **Max Bonds left at 1** on the carbon: the script trims the sockets to `maxBonds`, so it would take a single H. Check for 4 yellow gizmo lines.
+- **Atoms added in Play mode vanish on Stop.** Add test atoms in Edit mode (Ctrl+D). Grabbing a table atom doesn't respawn it yet; that's the dispenser step.
 
 ## Next steps
-1. Carbon prefab plus a methane test.
-2. Oxygen (bent, 104.48°) for water, and nitrogen for ammonia.
-3. **Breaking bonds:** grab a bonded atom to detach it.
-4. **Joining molecules:** bond two molecules together.
-5. Dispensers (grab an original, a copy spawns), delete a held atom, Clear Chemicals button.
+1. ~~Carbon prefab plus a methane test.~~ ✅ 2026-10-15
+2. **Dispenser** (grab an original on the table, a copy spawns in its place), so test atoms don't need Ctrl+D. Then delete a held atom and the Clear Chemicals button.
+3. Oxygen (bent, 104.48°) for water, and nitrogen for ammonia.
+4. **Breaking bonds:** grab a bonded atom to detach it.
+5. **Joining molecules:** bond two molecules together.
 6. **Phase 5:** sync atoms and bonds with Object Pool and manual sync.
 7. **Phase 6:** name, save and rename compounds (PlayerData); saved-compounds table.
 8. Double and triple bonds, using Pyykkö's double/triple radii from `elements.json`.

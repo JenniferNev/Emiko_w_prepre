@@ -13,5 +13,5 @@ Context saved from the build sessions with Claude, so work can resume from these
 
 - **Branch:** `world/scisci`, the chemistry lab world (no world ID yet, so the first upload creates a new world).
 - **`main`:** the original mirror world (`wrld_aefe175a-146d-4551-9c9d-1b3e7dca4f2b`). Never merge `world/scisci` into it.
-- **Phase:** 4 (UdonSharp). Hydrogen atom works, `ElementAtom.cs` bonding written.
-- **Next:** create the `ElementAtom` program asset, build the Carbon prefab variant, test methane (CH₄).
+- **Phase:** 4 (UdonSharp). `Atom_H` and `Atom_C` prefabs bond with `ElementAtom.cs`: **methane (CH₄) works** in ClientSim.
+- **Next:** a dispenser (grab a table atom, a copy spawns in its place), then oxygen and nitrogen (water, ammonia).

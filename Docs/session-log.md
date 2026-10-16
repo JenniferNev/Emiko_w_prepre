@@ -41,3 +41,12 @@ What was done, in order. Commits are on `world/scisci` unless noted.
 - **`ElementAtom.cs`** (UdonSharp): bond sockets built from measured angles, snap-on-release at the real bond length, molecules parented to their anchor atom (`0a097cc`).
   - Socket angles checked numerically.
 - **Next:** program asset, Carbon prefab variant, methane test.
+
+## 2026-10-15: Methane works
+- **Program asset:** the first `ElementAtom.asset` was an Udon *Graph* asset (made with Udon Behaviour → New Program). Replaced it with an Udon C# Program Asset in `ChemistryLab/Scripts/` and added Element Atom directly to `Atom_H`.
+  - The "Source C# script is null" errors came from UdonSharp compiling the new asset before its script was assigned.
+- **Prefabs:** `Atom_H` and its variant `Atom_C` (0.152, `#909090`, C, 4 bonds, tetrahedral 109.471°).
+  - The Carbon values were first set as scene overrides, and Max Bonds was left at 1. Fixed with Overrides → Apply All.
+- **Fix:** element letters were mirrored left-to-right (only visible on C). Cause: a cross product in the wrong order for Unity's left-handed world (`ed8811b`).
+- **Test:** four H's snap onto the C at 10.7 cm in tetrahedral directions: CH₄ ✅
+- **Next:** dispenser, then O and N.

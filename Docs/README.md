@@ -13,5 +13,6 @@ Context saved from the build sessions with Claude, so work can resume from these
 
 - **Branch:** `world/scisci`, the chemistry lab world (no world ID yet, so the first upload creates a new world).
 - **`main`:** the original mirror world (`wrld_aefe175a-146d-4551-9c9d-1b3e7dca4f2b`). Never merge `world/scisci` into it.
-- **Phase:** 4 (UdonSharp). `Atom_H` and `Atom_C` prefabs bond with `ElementAtom.cs`: methane and ethane work in ClientSim. Table originals are dispensers; click drops, hold deletes, right-click replaces an end atom.
-- **Next:** oxygen and nitrogen (water, ammonia), then the Clear Chemicals button.
+- **Phase:** 4 (UdonSharp). H, C, N and O prefabs bond with `ElementAtom.cs`: methane, ethane, water and ammonia work in ClientSim. Table originals are dispensers; click drops, hold deletes, right-click replaces an end atom.
+- **Must work in VR** (headset and hand controllers), not only on desktop.
+- **Next:** a first VR test (private upload), then grabbing a molecule by any atom. The full list is in [chemistry-world.md](chemistry-world.md#next-steps).

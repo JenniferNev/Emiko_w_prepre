@@ -58,3 +58,9 @@ What was done, in order. Commits are on `world/scisci` unless noted.
 - **Fix:** the first delete version threw `NullReferenceException`s: it destroyed the atom inside `OnPickupUseDown`, and ClientSim kept moving it. Delete now runs from the delayed event, after `Drop()`.
 - **ClientSim quirk:** keeping the grab button down sends a Use at 0.5 s; a UseDown within 0.6 s of the grab is ignored.
 - **Next:** O and N, then Clear Chemicals.
+
+## 2026-10-16: Oxygen and nitrogen; plan additions
+- **`Atom_O`** (0.132, `#FF0D0D`, 2 bonds, bent 104.4776°) and **`Atom_N`** (0.142, `#3050F8`, white symbol, 3 bonds, trigonal-pyramidal 106.67°): prefab variants of `Atom_H`, made in Prefab Mode. Both are dispensers on the table.
+  - Water and ammonia work. No script changes were needed.
+- **Decision:** the world must work with VR headsets and hand controllers (`ef05625`).
+- **Plan additions (Jenn):** grab a molecule by any atom, move a misplaced atom, rotate around a bond, double/triple bond geometry rules, ions with a charge sign. Details in `chemistry-world.md` → Next steps.

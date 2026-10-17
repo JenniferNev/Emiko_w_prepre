@@ -12,7 +12,7 @@
 | 1 | World basics | Spawn points, respawn height, ClientSim testing, private upload | Spawn at (0, 0, 10), private upload | ✅ Done (2026-10-11) |
 | 2 | Blender → Unity | Modeling, apply transforms, UVs, materials, FBX export/import, colliders | Lab table, atom sphere | 🟡 Table in, inside the `ChemistryLab` group |
 | 3 | Lighting & performance | Baked vs real-time, Static flags, light/reflection probes, occlusion, Quest limits | Baked-light lab room | ⬜ |
-| 4 | UdonSharp | Events (Interact, OnPickup, OnDrop…), arrays, SendCustomEvent | Grabbable atoms that bond | 🟡 H and C bond (methane, ethane); dispensers, delete, replace (2026-10-16) |
+| 4 | UdonSharp | Events (Interact, OnPickup, OnDrop…), arrays, SendCustomEvent | Grabbable atoms that bond | 🟡 H, C, N, O bond (methane, ethane, water, ammonia); dispensers, delete, replace (2026-10-16) |
 | 5 | Networking | Ownership, `[UdonSynced]`, RequestSerialization, late joiners, Object Pool/Sync | Everyone sees the same atoms and bonds | ⬜ |
 | 6 | UI & persistence | Canvas + VRC UI Shape, TMP input, PlayerData | Name and save compounds | ⬜ |
 | 7 | Polish | Shaders, audio, AudioLink, video players, publishing | Make it look and sound good | ⬜ |

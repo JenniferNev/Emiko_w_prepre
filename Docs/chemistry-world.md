@@ -65,6 +65,8 @@ The scale is **1 pm = 1 mm**, and each sphere's diameter is 2 × its covalent ra
 
 Transition metals and f-block elements use typical coordination numbers and are marked `approximate`.
 
+**Prefabs built:** H, C, N, O (`Assets/ChemistryLab/Atom_*.prefab`). C, N and O are variants of `Atom_H`, so they all share its pickup settings. N's symbol text is white.
+
 ## Shaders: `Assets/ChemistryLab/Shaders/`
 
 ### `ChemistryLab/Atom Unlit` (the sphere)
@@ -153,15 +155,38 @@ Used on a TextMeshPro **3D** text object called `Symbol`, a child of the atom.
 ## Next steps
 1. ~~Carbon prefab plus a methane test.~~ ✅ 2026-10-15
 2. ~~Dispenser, delete a held atom~~ ✅ 2026-10-16, plus click/hold/right-click controls and replace. Still to do: the **Clear Chemicals** button.
-3. Oxygen (bent, 104.48°) for water, and nitrogen for ammonia.
-4. **Breaking bonds:** grab a bonded atom to detach it.
-5. **Joining molecules:** bond two molecules together.
-6. **Moving a misplaced atom** (Jenn's request): move a bonded atom from one socket to another free socket, without deleting and rebuilding. Shares its detach logic with step 4.
-7. **Rotating around a bond** (Jenn's request): each carbon keeps its tetrahedral shape, but the player can turn one tetrahedral carbon relative to another around the C–C bond, e.g. ethane's staggered vs eclipsed forms. Real single bonds rotate like this; double bonds don't (step 10).
+3. ~~Oxygen (bent, 104.48°) for water, and nitrogen for ammonia.~~ ✅ 2026-10-16
+4. **Grab a molecule by any atom** (Jenn's request): today only the root atom (the first one) is grabbable.
+   - **How:** keep every atom pickupable. When a non-root atom is grabbed, **re-root** the molecule: reverse the parent chain from that atom up to the old root, so the grabbed atom becomes the root and carries everything.
+   - **Conflicts with step 5** ("grab a bonded atom to detach it"), so detaching needs another gesture. Idea for VR: hold the molecule in one hand and pull an atom off with the other. Desktop has one hand, so it needs an alternative. To decide.
+5. **Breaking bonds:** detach a bonded atom (gesture: see step 4).
+6. **Joining molecules:** bond two molecules together.
+7. **Moving a misplaced atom** (Jenn's request): move a bonded atom from one socket to another free socket, without deleting and rebuilding. Shares its detach logic with step 5.
+8. **Rotating around a bond** (Jenn's request): each carbon keeps its tetrahedral shape, but the player can turn one tetrahedral carbon relative to another around the C–C bond, e.g. ethane's staggered vs eclipsed forms. Real single bonds rotate like this; double and triple bonds don't (step 11).
    - **How:** a bonded atom is a child of its partner, so turning that child's transform around the bond axis turns its whole branch with it. Controls still to decide.
-8. **Phase 5:** sync atoms and bonds with Object Pool and manual sync.
-9. **Phase 6:** name, save and rename compounds (PlayerData); saved-compounds table.
-10. Double and triple bonds, using Pyykkö's double/triple radii from `elements.json`. These bonds can't rotate.
+9. **Phase 5:** sync atoms and bonds with Object Pool and manual sync.
+10. **Phase 6:** name, save and rename compounds (PlayerData); saved-compounds table.
+11. **Double and triple bonds** (Jenn's spec, 2026-10-16). The rule: a double or triple bond counts as **one bond direction**, and the directions spread out as far apart as possible (VSEPR):
+
+    | Carbon's bonds | Directions | Shape | Example |
+    |---|---|---|---|
+    | 4 single | 4 | tetrahedral, 109.47° | CH₄ |
+    | 1 double + 2 single | 3 | trigonal planar, ideal 120° | H₂C=CH₂ |
+    | 2 double | 2 | linear, 180° | O=C=O |
+    | 1 triple + 1 single | 2 | linear, 180°: the single bond points exactly opposite the triple | HC≡CH |
+
+    - A **triple bond is always linear** at both of its atoms. A carbon with one double bond has either 2 single bonds or 1 more double bond, never anything else (4 bonds in total, counting a double as 2).
+    - Oxygen: one double bond and nothing else (C=O). Nitrogen: double + single, or one triple (HC≡N).
+    - **Bond length** uses Pyykkö's double/triple radii, already in `elements.json` (C=C 67 + 67 = 134 pm, C≡C 60 + 60 = 120 pm).
+    - **The hard part:** changing a bond's order changes the atom's geometry, so its existing bonds must be re-aimed (tetrahedral → planar → linear).
+    - **Visual:** atoms are touching spheres with no sticks, so bond order needs its own marker. To decide.
+    - **Gesture to upgrade single → double → triple:** to decide.
+    - Measured angles (e.g. ethylene's H–C–H) to come from NIST CCCBDB when this is built.
+12. **Ions** (Jenn's request): show a charge sign on the atom, e.g. O²⁻, Na⁺, NH₄⁺.
+    - **Chemistry:** the charge comes from **electrons** lost (+) or gained (−). The proton count is fixed by the element: one more proton would make a different element.
+    - **Drawing:** TextMeshPro rich text superscript in the symbol, e.g. `O<sup>2−</sup>`. The billboard shader should already handle the extra characters. Check that they stay inside the sphere's front.
+    - **Charge changes bonding:** NH₄⁺ has N with 4 bonds (tetrahedral), H₃O⁺ has O with 3 bonds (pyramidal), OH⁻ has O with 1 bond. So charge feeds into geometry, like bond order does in step 11. `elements.json` already lists oxidation states.
+    - **Size:** single-atom ions (Na⁺, Cl⁻) have **ionic radii**, not covalent ones. Source to use: Shannon 1976, *Acta Cryst.* A32, 751. Atoms in covalent ions (NH₄⁺) keep the covalent rule.
 
 ## Open question
 `Blender/game-3d-modelsv2.fbx` (24 MB) is the model the table was cut from. Keep it in the repo, or remove it?

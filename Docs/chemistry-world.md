@@ -92,6 +92,19 @@ Used on a TextMeshPro **3D** text object called `Symbol`, a child of the atom.
 | `geometry` | `terminal`, `linear`, `bent`, `trigonal-planar`, `trigonal-pyramidal`, `tetrahedral`, `octahedral` or `none` |
 | `bondAngle` | Angle between bonds, in degrees |
 | `snapFactor` | Snap distance multiplier (default 1.6) |
+| `isDispenser` | A table original: grabbing it leaves a copy in its place. Originals never bond. Ticked per scene instance (on the table's H and C), not on the prefab. |
+| `deleteHoldSeconds` | How long Use must be held to delete (default 0.6 s) |
+
+**Controls** (VRChat owns the buttons; the script reacts to the events they send). The pickup needs **Auto Hold = Yes**: ClientSim only sends Use events to Auto Hold pickups.
+
+| Desktop | VR | Event | Result |
+|---|---|---|---|
+| left click | grip | `OnPickup` | grab; a dispenser leaves an `Instantiate` copy at its saved home spot |
+| left click while holding | trigger tap | `OnPickupUseDown` → `OnPickupUseUp` | drop and bond |
+| hold left click 0.6 s | hold trigger | `OnPickupUseDown` + `SendCustomEventDelayedSeconds` | delete the atom and everything bonded to it |
+| right click | grip release | `OnDrop` not started by us | **replace** an end atom, otherwise bond |
+
+**Replace:** a free atom dropped on an **end atom** (exactly one bond) of a molecule takes its place: it's aimed along that bond, set at r(partner) + r(new), and the old atom is destroyed. Example: C on one H of CH₄ gives H₃C–C; three more H's make ethane C₂H₆. If the end atom was the molecule's root, the new atom becomes the root.
 
 **Sockets:** bond directions in the atom's local space, built from the geometry. Checked numerically: tetrahedral 109.471°, NH₃ pyramidal 106.67°, H₂O bent 104.478°, trigonal planar 120°. In the Editor, selecting an atom draws its sockets as **yellow gizmo lines**.
 
@@ -106,8 +119,14 @@ Used on a TextMeshPro **3D** text object called `Symbol`, a child of the atom.
 **Current limits:**
 - No unbonding.
 - No joining two molecules.
+- Replace works on end atoms only (one bond), not centre atoms.
 - A bonded atom can't be grabbed separately; move the molecule by its root atom.
-- Local only: remove **VRC Object Sync** from atoms for now, because synced objects can't change parent.
+- Local only: remove **VRC Object Sync** from atoms for now, because synced objects can't change parent. Dispenser copies (`Instantiate`) are local too.
+
+**ClientSim lessons (from its source, `Integrations/ClientSim/Runtime/Player/ClientSimPlayerHand.cs`):**
+- **Don't destroy a held pickup inside `OnPickupUseDown`.** ClientSim calls it from its own `Update` and then keeps moving the held object (`UpdateManipulation`), causing a `NullReferenceException`. Delete from a delayed event, after `Drop()`.
+- **Keeping the grab button down sends a Use** once the grab is 0.5 s old (`INITIAL_PICKUP_DURATION`). The script ignores a UseDown less than 0.6 s after the grab.
+- `Drop()` calls `OnPickupUseUp` first if Use is down, so `OnPickupUseUp` must cope with being called during a drop.
 
 ### Setup in Unity (done 2026-10-15: methane works)
 1. **Program asset:** `Assets/ChemistryLab/Scripts/ElementAtom.asset`. Made with Create → VRChat → Udon → **Udon C# Program Asset**, then Source Csharp Script = `ElementAtom.cs`.
@@ -128,7 +147,7 @@ Used on a TextMeshPro **3D** text object called `Symbol`, a child of the atom.
 
 ## Next steps
 1. ~~Carbon prefab plus a methane test.~~ ✅ 2026-10-15
-2. **Dispenser** (grab an original on the table, a copy spawns in its place), so test atoms don't need Ctrl+D. Then delete a held atom and the Clear Chemicals button.
+2. ~~Dispenser, delete a held atom~~ ✅ 2026-10-16, plus click/hold/right-click controls and replace. Still to do: the **Clear Chemicals** button.
 3. Oxygen (bent, 104.48°) for water, and nitrogen for ammonia.
 4. **Breaking bonds:** grab a bonded atom to detach it.
 5. **Joining molecules:** bond two molecules together.

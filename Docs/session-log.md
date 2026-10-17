@@ -50,3 +50,11 @@ What was done, in order. Commits are on `world/scisci` unless noted.
 - **Fix:** element letters were mirrored left-to-right (only visible on C). Cause: a cross product in the wrong order for Unity's left-handed world (`ed8811b`).
 - **Test:** four H's snap onto the C at 10.7 cm in tetrahedral directions: CH₄ ✅
 - **Next:** dispenser, then O and N.
+
+## 2026-10-16: Dispensers, controls, replace (`fc9dc95`)
+- **Dispenser:** table originals (`isDispenser`) leave an `Instantiate` copy at their saved home spot when grabbed. Originals never bond.
+- **Controls** (Jenn's design): click Use = drop and bond, hold Use 0.6 s = delete (via `SendCustomEventDelayedSeconds`), VRChat's drop (right click) = replace. Pickup Auto Hold set to Yes, so ClientSim sends Use events.
+- **Replace:** a free atom dropped on an end atom takes its place. C on an H of methane gives H₃C–C, and three more H's make ethane ✅
+- **Fix:** the first delete version threw `NullReferenceException`s: it destroyed the atom inside `OnPickupUseDown`, and ClientSim kept moving it. Delete now runs from the delayed event, after `Drop()`.
+- **ClientSim quirk:** keeping the grab button down sends a Use at 0.5 s; a UseDown within 0.6 s of the grab is ignored.
+- **Next:** O and N, then Clear Chemicals.

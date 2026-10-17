@@ -1104,12 +1104,12 @@ MonoBehaviour:
   useAssignedLayers: 0
   DynamicPrefabs: []
   DynamicMaterials:
-  - {fileID: 2100000, guid: a67adbf34c695d9f485f901de64cbd7f, type: 2}
   - {fileID: 2100000, guid: 26e54997282b25ed3b801c950dadf02c, type: 2}
   - {fileID: 2100000, guid: 8c21101fd56d42ba9afe5bdaa5866d0e, type: 2}
   - {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   - {fileID: 2100000, guid: 96ade05fe9a0dbd8a9a8dc915036ec50, type: 2}
   - {fileID: 2100000, guid: 155f48e3b2161643484eefd6d4a64dee, type: 2}
+  - {fileID: 2100000, guid: a67adbf34c695d9f485f901de64cbd7f, type: 2}
   - {fileID: 2100000, guid: c815f7613a04b724089c206857e57c6a, type: 2}
   LightMapsNear: []
   LightMapsFar: []
@@ -1185,21 +1185,6 @@ MonoBehaviour:
     - VRC.Udon.UdonBehaviour
   - gameObject: {fileID: 1998042318}
     ID: 14
-    SerializedTypeNames:
-    - VRC.SDK3.Components.VRCPickup
-    - VRC.Udon.UdonBehaviour
-  - gameObject: {fileID: 0}
-    ID: 15
-    SerializedTypeNames:
-    - VRC.SDK3.Components.VRCPickup
-    - VRC.Udon.UdonBehaviour
-  - gameObject: {fileID: 0}
-    ID: 16
-    SerializedTypeNames:
-    - VRC.SDK3.Components.VRCPickup
-    - VRC.Udon.UdonBehaviour
-  - gameObject: {fileID: 0}
-    ID: 17
     SerializedTypeNames:
     - VRC.SDK3.Components.VRCPickup
     - VRC.Udon.UdonBehaviour

@@ -155,9 +155,9 @@ MonoBehaviour:
   ExactGrip: {fileID: 0}
   allowManipulationWhenEquipped: 0
   orientation: 0
-  AutoHold: 2
+  AutoHold: 3
   InteractionText: 
-  UseText: Use
+  UseText: Delete
   useEventBroadcastType: 0
   UseDownEventName: 
   UseUpEventName: 
@@ -198,6 +198,7 @@ MonoBehaviour:
   geometry: terminal
   bondAngle: 109.471
   snapFactor: 1.6
+  isDispenser: 1
 --- !u!114 &2865115528183258538
 MonoBehaviour:
   m_ObjectHideFlags: 0

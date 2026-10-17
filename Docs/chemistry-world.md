@@ -151,9 +151,12 @@ Used on a TextMeshPro **3D** text object called `Symbol`, a child of the atom.
 3. Oxygen (bent, 104.48°) for water, and nitrogen for ammonia.
 4. **Breaking bonds:** grab a bonded atom to detach it.
 5. **Joining molecules:** bond two molecules together.
-6. **Phase 5:** sync atoms and bonds with Object Pool and manual sync.
-7. **Phase 6:** name, save and rename compounds (PlayerData); saved-compounds table.
-8. Double and triple bonds, using Pyykkö's double/triple radii from `elements.json`.
+6. **Moving a misplaced atom** (Jenn's request): move a bonded atom from one socket to another free socket, without deleting and rebuilding. Shares its detach logic with step 4.
+7. **Rotating around a bond** (Jenn's request): each carbon keeps its tetrahedral shape, but the player can turn one tetrahedral carbon relative to another around the C–C bond, e.g. ethane's staggered vs eclipsed forms. Real single bonds rotate like this; double bonds don't (step 10).
+   - **How:** a bonded atom is a child of its partner, so turning that child's transform around the bond axis turns its whole branch with it. Controls still to decide.
+8. **Phase 5:** sync atoms and bonds with Object Pool and manual sync.
+9. **Phase 6:** name, save and rename compounds (PlayerData); saved-compounds table.
+10. Double and triple bonds, using Pyykkö's double/triple radii from `elements.json`. These bonds can't rotate.
 
 ## Open question
 `Blender/game-3d-modelsv2.fbx` (24 MB) is the model the table was cut from. Keep it in the repo, or remove it?

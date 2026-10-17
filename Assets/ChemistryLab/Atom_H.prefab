@@ -199,6 +199,7 @@ MonoBehaviour:
   bondAngle: 109.471
   snapFactor: 1.6
   isDispenser: 1
+  deleteHoldSeconds: 0.6
 --- !u!114 &2865115528183258538
 MonoBehaviour:
   m_ObjectHideFlags: 0

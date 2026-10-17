@@ -7,6 +7,11 @@ using VRC.SDKBase;
 /// directions its covalent bonds point, built from real bond angles) and
 /// snaps to a nearby atom when the player lets go of it.
 ///
+/// Atoms marked isDispenser are the originals on the table: grabbing one
+/// leaves a copy in its place. While holding: click Use to drop and bond,
+/// hold Use to delete, VRChat's drop (right click / grip) to replace an end
+/// atom of a molecule.
+///
 /// Size convention (see Data/elements.json): the sphere's diameter is twice
 /// the covalent radius at 1 pm = 1 mm, so two bonded atoms touch exactly at
 /// the real bond length r1 + r2. The radius is read from the object's scale.
@@ -33,14 +38,44 @@ public class ElementAtom : UdonSharpBehaviour
     [Tooltip("Snap when the centers are closer than bond length × this factor.")]
     public float snapFactor = 1.6f;
 
+    [Header("Table original")]
+    [Tooltip("An original on the table: grabbing it leaves a fresh copy in its place. Originals never bond.")]
+    public bool isDispenser = false;
+
+    [Header("Controls")]
+    [Tooltip("Holding Use (left click / trigger) this long deletes the held atom. A shorter click drops it.")]
+    public float deleteHoldSeconds = 0.6f;
+
     private Vector3[] sockets;          // bond directions, in this atom's local space
     private ElementAtom[] partners;     // the atom bonded on each socket (null = free)
     private int bondCount;
+    private bool deleting;              // set while being deleted, so the drop doesn't bond
+    private bool useHeld;               // Use is pressed right now
+    private float useDownTime;          // when Use was pressed
+    private bool clickDrop;             // this drop came from our own click, not VRChat's drop button
+    private float pickupTime;           // when it was grabbed
+
+    // Keeping the button down after a grab sends UseDown once the grab is
+    // 0.5 s old (ClientSim's INITIAL_PICKUP_DURATION). A UseDown sooner than
+    // this after the grab is that same press, not a new click.
+    private const float GrabPressSeconds = 0.6f;
+
+    // Where a dispenser sits, so its replacement appears in the same spot.
+    private Transform homeParent;
+    private Vector3 homeLocalPosition;
+    private Quaternion homeLocalRotation;
+    private Vector3 homeLocalScale;
 
     void Start()
     {
         sockets = ComputeSockets();
         partners = new ElementAtom[sockets.Length];
+        bondCount = 0;                  // a copy made by a dispenser starts unbonded
+
+        homeParent = transform.parent;
+        homeLocalPosition = transform.localPosition;
+        homeLocalRotation = transform.localRotation;
+        homeLocalScale = transform.localScale;
     }
 
     // ------------------------------------------------------------------ queries
@@ -100,6 +135,32 @@ public class ElementAtom : UdonSharpBehaviour
         bondCount++;
     }
 
+    /// <summary>Swaps the atom on a socket for another, keeping the bond count.</summary>
+    public void ReplacePartner(int socket, ElementAtom other)
+    {
+        partners[socket] = other;
+    }
+
+    /// <summary>The socket bonded to `other`, or -1.</summary>
+    public int GetSocketOf(ElementAtom other)
+    {
+        for (int i = 0; i < partners.Length; i++)
+        {
+            if (partners[i] == other) return i;
+        }
+        return -1;
+    }
+
+    /// <summary>The first bonded atom, or null (enough for end atoms, which have one).</summary>
+    public ElementAtom GetFirstPartner()
+    {
+        for (int i = 0; i < partners.Length; i++)
+        {
+            if (partners[i] != null) return partners[i];
+        }
+        return null;
+    }
+
     /// <summary>A bonded atom is carried by its partner, so it stops being a pickup.</summary>
     public void SetGrabbable(bool grabbable)
     {
@@ -107,16 +168,98 @@ public class ElementAtom : UdonSharpBehaviour
         if (pickup != null) pickup.pickupable = grabbable;
     }
 
-    // ------------------------------------------------------------------ bonding
+    // ------------------------------------------------------------ pickup events
+
+    /// <summary>
+    /// Grabbing a table original: the atom in your hand becomes a normal atom,
+    /// and a copy is left on the table to be the new original.
+    /// </summary>
+    public override void OnPickup()
+    {
+        pickupTime = Time.time;
+        useHeld = false;
+        if (!isDispenser) return;
+        isDispenser = false;
+        SpawnReplacement();
+    }
+
+    // Controls while holding an atom (desktop / VR):
+    //   click Use (left click / trigger tap)   -> drop and bond
+    //   hold Use for deleteHoldSeconds         -> delete the atom and its molecule
+    //   VRChat's drop (right click / grip)     -> replace an end atom, else bond
+    // VRChat owns the buttons; we only react to the events they send.
+
+    public override void OnPickupUseDown()
+    {
+        if (Time.time - pickupTime < GrabPressSeconds) return;   // still the press that grabbed it
+        useHeld = true;
+        useDownTime = Time.time;
+        // Check back later: if Use is still down by then, it was a hold.
+        SendCustomEventDelayedSeconds(nameof(CheckDeleteHold), deleteHoldSeconds);
+    }
+
+    public override void OnPickupUseUp()
+    {
+        if (!useHeld) return;               // the click that grabbed it, or already deleted
+        useHeld = false;
+        clickDrop = true;                   // released early: a click, so drop
+        DropPickup();
+    }
+
+    /// <summary>Runs deleteHoldSeconds after Use went down (must be public for SendCustomEvent).</summary>
+    public void CheckDeleteHold()
+    {
+        // Still down, and this is the same press (not an older, shorter one).
+        if (!useHeld || Time.time - useDownTime < deleteHoldSeconds - 0.05f) return;
+        useHeld = false;
+        deleting = true;
+        DropPickup();                       // let go first, so the hand isn't left holding nothing
+        Destroy(gameObject);                // children (bonded atoms) go with it
+    }
 
     public override void OnDrop()
     {
+        useHeld = false;
+        if (deleting) return;
+
+        bool byClick = clickDrop;
+        clickDrop = false;
+
+        // VRChat's own drop (right click / grip): replace an end atom if one is close.
+        if (!byClick && TryReplaceNearby()) return;
         TryBondNearby();
     }
 
+    private void DropPickup()
+    {
+        VRC_Pickup pickup = (VRC_Pickup)GetComponent(typeof(VRC_Pickup));
+        if (pickup != null) pickup.Drop();
+    }
+
+    /// <summary>
+    /// Copies this atom back into its table spot. Instantiate is local only:
+    /// other players don't see the copy (Phase 5 replaces this with a synced
+    /// VRC Object Pool).
+    /// </summary>
+    private void SpawnReplacement()
+    {
+        GameObject copy = Instantiate(gameObject, homeParent);
+        copy.name = gameObject.name;         // not "Atom_H(Clone)"
+
+        Transform t = copy.transform;
+        t.localPosition = homeLocalPosition;
+        t.localRotation = homeLocalRotation;
+        t.localScale = homeLocalScale;
+
+        ElementAtom atom = copy.GetComponent<ElementAtom>();
+        atom.isDispenser = true;
+    }
+
+    // ------------------------------------------------------------------ bonding
+
     public void TryBondNearby()
     {
-        if (GetFreeSocketCount() == 0) return;
+        if (isDispenser || GetFreeSocketCount() == 0) return;
 
         // Largest covalent radius is ~0.26 m (Cs), so this reaches any partner.
         Collider[] hits = Physics.OverlapSphere(transform.position, GetRadius() * snapFactor + 0.5f);
@@ -127,7 +270,7 @@ public class ElementAtom : UdonSharpBehaviour
         {
             if (hits[i] == null) continue;
             ElementAtom other = hits[i].GetComponent<ElementAtom>();
-            if (other == null || other == this) continue;
+            if (other == null || other == this || other.isDispenser) continue;
             if (other.GetFreeSocketCount() == 0 || IsBondedTo(other)) continue;
 
             float bondLength = GetRadius() + other.GetRadius();
@@ -194,6 +337,77 @@ public class ElementAtom : UdonSharpBehaviour
         anchor.SetPartner(anchorSocket, mover);
         mover.SetPartner(moverSocket, anchor);
         mover.SetGrabbable(false);
+    }
+
+    // ------------------------------------------------------------------ replacing
+
+    /// <summary>
+    /// Swaps this (free, single) atom in for the closest end atom of a molecule,
+    /// i.e. one with exactly one bond. Example: C onto one H of CH4 gives H3C–C,
+    /// and the new C has three free sockets. Returns false if nothing was replaced.
+    /// </summary>
+    public bool TryReplaceNearby()
+    {
+        if (bondCount != 0 || sockets.Length == 0) return false;
+
+        Collider[] hits = Physics.OverlapSphere(transform.position, GetRadius() * snapFactor + 0.5f);
+
+        ElementAtom target = null;
+        float bestDistance = float.MaxValue;
+        for (int i = 0; i < hits.Length; i++)
+        {
+            if (hits[i] == null) continue;
+            ElementAtom other = hits[i].GetComponent<ElementAtom>();
+            if (other == null || other == this || other.isDispenser) continue;
+            if (other.GetBondCount() != 1) continue;   // only end atoms, for now
+
+            float distance = Vector3.Distance(transform.position, other.transform.position);
+            if (distance > (GetRadius() + other.GetRadius()) * snapFactor) continue;
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                target = other;
+            }
+        }
+
+        if (target == null) return false;
+        ReplaceAtom(target);
+        return true;
+    }
+
+    private void ReplaceAtom(ElementAtom old)
+    {
+        ElementAtom partner = old.GetFirstPartner();
+        if (partner == null) return;
+        int partnerSocket = partner.GetSocketOf(old);
+        int mySocket = GetBestFreeSocket(partner.transform.position - transform.position);
+        if (partnerSocket < 0 || mySocket < 0) return;
+
+        Transform me = transform;
+        Transform partnerT = partner.transform;
+        Transform oldT = old.transform;
+
+        // Same placement as bonding: face the partner's socket, sit at r(partner) + r(me).
+        Vector3 bondDir = partner.GetSocketWorldDirection(partnerSocket);
+        me.rotation = Quaternion.FromToRotation(GetSocketWorldDirection(mySocket), -bondDir) * me.rotation;
+        me.position = partnerT.position + bondDir * (partner.GetRadius() + GetRadius());
+
+        if (oldT.parent == partnerT)
+        {
+            // The old atom hung off its partner: take its place as a carried atom.
+            me.SetParent(partnerT, true);
+            SetGrabbable(false);
+        }
+        else
+        {
+            // The old atom carried its partner (it was the molecule's root): become the root.
+            me.SetParent(oldT.parent, true);
+            partnerT.SetParent(me, true);   // before Destroy, or the partner would go with it
+        }
+
+        partner.ReplacePartner(partnerSocket, this);
+        SetPartner(mySocket, partner);
+        Destroy(old.gameObject);
     }
 
     // ------------------------------------------------------------------ geometry

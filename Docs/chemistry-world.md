@@ -12,6 +12,11 @@ A lab with periodic-table elements as grabbable spheres. Each sphere shows its e
 
 **First version:** single bonds, a few elements, local only (bonds synced in Phase 5).
 
+**VR is required** (decided 2026-10-16): everything must work with a VR headset and hand controllers, not only on desktop.
+- Controls are built on VRChat's pickup events (grab, Use, drop), never on keyboard or mouse keys, so they map to controllers automatically (see the Controls table under Bonding).
+- **Controllers without Auto Hold** (e.g. Valve Index): releasing the grip drops the atom. That counts as VRChat's drop, so it replaces an end atom if one is close and otherwise bonds normally. Nothing is lost.
+- **Testing:** ClientSim is desktop only, and Build & Test doesn't work on Linux, so VR testing needs a private upload and joining the world in VR.
+
 ## Scene layout
 
 - **`ChemistryLab`:** an empty object at (3, 0, 12) that holds everything in the lab.
